@@ -8,12 +8,12 @@ import (
 	"github.com/asaskevich/govalidator"
 
 	"github.com/free5gc/openapi/models"
-	logger_util "github.com/free5gc/util/logger"
+	logger_util "xApp/internal/logger"
 )
 
 const (
 	XApp_EXPECTED_CONFIG_VERSION = "1.0.0"
-	XApp_DEFAULT_IPV4            = "127.0.0.9"
+	XApp_DEFAULT_IPV4            = "192.168.100.83"
 	XApp_DEFAULT_PORT            = "8000"
 	XApp_DEFAULT_PORT_INT        = 8000
 )

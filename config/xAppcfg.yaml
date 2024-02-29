@@ -5,8 +5,8 @@ info:
 configuration:
   sbi: # Service-based interface information
     scheme: http # the protocol for sbi (http or https)
-    registerIPv4: 127.0.0.9 # IP used to register to NRF
-    bindingIPv4: 127.0.0.9  # IP used to bind the service
+    registerIPv4: 192.168.100.83 # IP used to register to NRF
+    bindingIPv4: 192.168.100.83  # IP used to bind the service
     port: 8000 # Port used to bind the service
     tls: # the local path of TLS key
       pem: config/TLS/xApp.pem # AUSF TLS Certificate

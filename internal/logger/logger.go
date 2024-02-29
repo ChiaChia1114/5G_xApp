@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"github.com/asaskevich/govalidator"
+	"reflect"
 	"time"
 
 	formatter "github.com/antonfisher/nested-logrus-formatter"
@@ -20,6 +22,10 @@ var (
 	ConsumerLog         *logrus.Entry
 	GinLog              *logrus.Entry
 )
+
+type Logger struct {
+	XAPP *LogSetting `yaml:"XAPP" valid:"optional"`
+}
 
 func init() {
 	log = logrus.New()
@@ -77,4 +83,36 @@ func SetLogLevel(level logrus.Level) {
 
 func SetReportCaller(enable bool) {
 	log.SetReportCaller(enable)
+}
+
+func (l *Logger) Validate() (bool, error) {
+	logger := reflect.ValueOf(l).Elem()
+	for i := 0; i < logger.NumField(); i++ {
+		if logSetting := logger.Field(i).Interface().(*LogSetting); logSetting != nil {
+			result, err := logSetting.validate()
+			return result, err
+		}
+	}
+
+	result, err := govalidator.ValidateStruct(l)
+	return result, err
+}
+
+type LogSetting struct {
+	DebugLevel   string `yaml:"debugLevel" valid:"debugLevel"`
+	ReportCaller bool   `yaml:"ReportCaller" valid:"type(bool)"`
+}
+
+func (l *LogSetting) validate() (bool, error) {
+	govalidator.TagMap["debugLevel"] = govalidator.Validator(func(str string) bool {
+		if str == "panic" || str == "fatal" || str == "error" || str == "warn" ||
+			str == "info" || str == "debug" || str == "trace" {
+			return true
+		} else {
+			return false
+		}
+	})
+
+	result, err := govalidator.ValidateStruct(l)
+	return result, err
 }
