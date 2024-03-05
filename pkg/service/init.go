@@ -117,9 +117,10 @@ func handleConnection(conn net.Conn) {
 		fmt.Println("Received OctetString:", octetString)
 		OriginalNASMessage, OtherNASMessage := HandleOctetString(octetString)
 		// Respond to client
-		response := string(OriginalNASMessage)
+		//response := OriginalNASMessage
+		fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
 		//conn.Write(response)
-		_, err = conn.Write([]byte(response))
+		_, err = conn.Write(OriginalNASMessage)
 		if err != nil {
 			fmt.Println("Error writing response:", err.Error())
 		}
