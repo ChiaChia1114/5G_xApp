@@ -1,7 +1,6 @@
 package context
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
@@ -15,7 +14,7 @@ import (
 func InitxAppContext(context *XAppContext) {
 	config := factory.XAppConfig
 	//logger.InitLog.Infof("ausfconfig Info: Version[%s] Description[%s]\n", config.Info.Version, config.Info.Description)
-	fmt.Println("Hello world! 3")
+	//fmt.Println("Hello world! 3")
 	configuration := config.Configuration
 	sbi := configuration.Sbi
 
@@ -57,7 +56,7 @@ func InitxAppContext(context *XAppContext) {
 	// context.NfService
 	context.NfService = make(map[models.ServiceName]models.NfService)
 	//AddNfServices(&context.NfService, &config, context)
-	fmt.Println("ausf context = ", context)
+	//fmt.Println("ausf context = ", context)
 
 	context.EapAkaSupiImsiPrefix = configuration.EapAkaSupiImsiPrefix
 }

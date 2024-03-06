@@ -25,7 +25,7 @@ func main() {
 	}
 
 	//m := nas.NewMessage()
-	//m.GmmMessage = nas.NewGmmMessage()
+	//m.GmmMessage = nas.NewGmmM essage()
 }
 
 func action(c *cli.Context) error {

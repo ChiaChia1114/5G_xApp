@@ -145,7 +145,7 @@ func (xApp *XApp) Start() {
 	//	keyPath = sbi.Tls.Key
 	//}
 	xApp_context.Init()
-	fmt.Println("Hello world! 4")
+	//fmt.Println("Hello world! 4")
 	self := xApp_context.GetSelf()
 	// Register to NRF
 	//profile, err := consumer.BuildNFInstance(self)
@@ -166,7 +166,6 @@ func (xApp *XApp) Start() {
 		return
 	}
 	defer ln.Close()
-
 	fmt.Println("Server is listening on port 12345")
 
 	go func() {
