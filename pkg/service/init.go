@@ -114,19 +114,26 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		octetString := buffer[:bytesRead]
-		fmt.Println("Received OctetString:", octetString)
-		OriginalNASMessage, OtherNASMessage := HandleOctetString(octetString)
-		// Respond to client
-		//response := OriginalNASMessage
-		fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
-		//conn.Write(response)
-		_, err = conn.Write(OriginalNASMessage)
-		if err != nil {
-			fmt.Println("Error writing response:", err.Error())
-		}
+		//fmt.Println("Received OctetString:", octetString)
+		if octetString != nil {
+			OriginalNASMessage, OtherNASMessage := HandleMessageSelection(octetString)
+			// Respond to client
+			//fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
+			_, err = conn.Write(OriginalNASMessage)
+			if err != nil {
+				fmt.Println("Error writing response:", err.Error())
+			}
 
-		//HandleOtherMessage
-		HandleOtherMessage(OtherNASMessage)
+			//HandleOtherMessage
+			if OtherNASMessage != nil {
+				HandleOtherMessage(OtherNASMessage)
+			}
+		}
+		//_, err = conn.Write("No data")
+		//if err != nil {
+		//	fmt.Println("Error writing response:", err.Error())
+		//}
+
 	}
 }
 
@@ -134,29 +141,8 @@ func (xApp *XApp) Start() {
 	logger.InitLog.Infoln("Server started")
 	router := logger_util.NewGinWithLogrus(logger.GinLog)
 
-	// Setting TLS initailize
-	//ueauthentication.AddService(router)
-	//
-	//pemPath := util.AusfDefaultPemPath
-	//keyPath := util.AusfDefaultKeyPath
-	//sbi := factory.AusfConfig.Configuration.Sbi
-	//if sbi.Tls != nil {
-	//	pemPath = sbi.Tls.Pem
-	//	keyPath = sbi.Tls.Key
-	//}
 	xApp_context.Init()
-	//fmt.Println("Hello world! 4")
 	self := xApp_context.GetSelf()
-	// Register to NRF
-	//profile, err := consumer.BuildNFInstance(self)
-	//if err != nil {
-	//	logger.InitLog.Error("Build AUSF Profile Error")
-	//}
-	//_, self.NfId, err = consumer.SendRegisterNFInstance(self.NrfUri, self.NfId, profile)
-	//if err != nil {
-	//	logger.InitLog.Errorf("AUSF register to NRF Error[%s]", err.Error())
-	//}
-
 	addr := fmt.Sprintf("%s:%d", self.BindingIPv4, self.SBIPort)
 
 	// Listen for incoming connections on port 8080
@@ -213,9 +199,6 @@ func (xApp *XApp) Start() {
 	if serverScheme == "http" {
 		err = server.ListenAndServe()
 	}
-	//} else if serverScheme == "https" {
-	//	err = server.ListenAndServeTLS(pemPath, keyPath)
-	//}
 
 	if err != nil {
 		logger.InitLog.Fatalf("HTTP server setup failed: %+v", err)
@@ -224,14 +207,5 @@ func (xApp *XApp) Start() {
 
 func (xApp *XApp) Terminate() {
 	logger.InitLog.Infof("Terminating AUSF...")
-	// deregister with NRF
-	//problemDetails, err := consumer.SendDeregisterNFInstance()
-	//if problemDetails != nil {
-	//	logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", problemDetails)
-	//} else if err != nil {
-	//	logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
-	//} else {
-	//	logger.InitLog.Infof("Deregister from NRF successfully")
-	//}
 	logger.InitLog.Infof("AUSF terminated")
 }
