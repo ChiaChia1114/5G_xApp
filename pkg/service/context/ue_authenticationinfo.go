@@ -42,6 +42,37 @@ func GetFirstRESByUEid(UEid int) ([]byte, bool) {
 	return ue.firstRES, true
 }
 
+//Check FirstRES returns the booling value corresponding to the given UEid.
+func CheckUserStatus(UEid int) bool {
+	ue, ok := AmfUeMap[UEid]
+	if !ok {
+		return false
+	}
+	if ue.firstRES == nil {
+		// NORA-AKA
+		return false
+	}
+	return true
+}
+
+//Delete FirstRES returns the booling value corresponding to the given UEid.
+func DeleteFirstRESByUEid(UEid int) bool {
+	ue, ok := AmfUeMap[UEid]
+	if ok {
+		ue.firstRES = nil
+		StoreAmfUe(ue)
+		CheckResult := CheckUserStatus(UEid)
+		if CheckResult {
+			// Delete First failed
+			return false
+		} else {
+			// Delete First success
+			return true
+		}
+	}
+	return false
+}
+
 // AddByteSlice adds a new byte slice to the AmfUe instance.
 func (ue *AmfUe) SetAuthParam(UEid int, res []byte, AuthType int, counter int) {
 	if _, ok := AmfUeMap[UEid]; !ok {

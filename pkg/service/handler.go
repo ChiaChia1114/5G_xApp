@@ -17,6 +17,12 @@ func HandleCompareRES(RES []byte) bool {
 		fmt.Println("FirstRES for UEid", UEid, ":", res)
 	}
 	fmt.Println("RES: ", RES)
+	DeleteFirstres := context.DeleteFirstRESByUEid(UEid)
+	if DeleteFirstres {
+		fmt.Println("Delete First RES Success")
+	} else {
+		fmt.Println("Delete First RES Failed")
+	}
 
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
@@ -28,6 +34,42 @@ func HandleCompareRES(RES []byte) bool {
 		equal := true
 		for i := 0; i < len(res); i++ {
 			if res[i] != RES[i] {
+				equal = false
+				break
+			}
+		}
+		// At this point, 'equal' is true if all bytes match, false otherwise
+		if equal {
+			// Slices are equal
+			return true
+		} else {
+			// Slices are not equal
+			return false
+		}
+	}
+}
+
+func HandleNORAAKACompareRES(RES []byte) bool {
+	// Compare RES and XRES
+	// if same, true. else false
+
+	UEid := 1
+	ue := &context.AmfUe{}
+	NORAakaRES := ue.GetAUTN(UEid, 3)
+
+	fmt.Println("RES: ", NORAakaRES)
+	fmt.Println("RES from UE: ", RES)
+
+	// Compare lengths of slices first
+	if len(NORAakaRES) != len(RES) {
+		// Slices are not equal if their lengths are different
+		// Handle the case where slices have different lengths
+		return false
+	} else {
+		// Compare each byte of the slices
+		equal := true
+		for i := 0; i < len(NORAakaRES); i++ {
+			if NORAakaRES[i] != RES[i] {
 				equal = false
 				break
 			}
@@ -97,34 +139,92 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		var OriginalNASMessage []byte
 		Header := receivedBytes[:4]
 		RES := receivedBytes[5:21]
-		ResultOfCompare := HandleCompareRES(RES)
 
-		RESLength := []byte{0x01}
-		OriginalNASMessage = append(OriginalNASMessage, Header...)
-		OriginalNASMessage = append(OriginalNASMessage, RESLength...)
+		// Check if it is triggger NORA-AKA or not.
+		UEid := 1
+		checkStatus := context.CheckUserStatus(UEid)
+		if checkStatus {
+			ResultOfCompare := HandleCompareRES(RES)
 
-		if ResultOfCompare == true {
-			CompareResult := []byte{0x01}
+			RESLength := []byte{0x01}
+			OriginalNASMessage = append(OriginalNASMessage, Header...)
+			OriginalNASMessage = append(OriginalNASMessage, RESLength...)
 
-			// Convert string to []byte
-			OriginalNASMessage = append(OriginalNASMessage, CompareResult...)
-			//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+			if ResultOfCompare == true {
+				CompareResultTrue := []byte{0x01}
 
-			return OriginalNASMessage, nil
+				// Convert string to []byte
+				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
+				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				return OriginalNASMessage, nil
+			} else {
+				CompareResultFalse := []byte{0x00}
+
+				// Convert string to []byte
+				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
+				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				return OriginalNASMessage, nil
+			}
 		} else {
-			CompareResult := []byte{0x00}
+			// Handle NORA-AKA Authentication Response
+			ResultOfCompare := HandleNORAAKACompareRES(RES)
 
-			// Convert string to []byte
-			OriginalNASMessage = append(OriginalNASMessage, CompareResult...)
-			//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+			RESLength := []byte{0x01}
+			OriginalNASMessage = append(OriginalNASMessage, Header...)
+			OriginalNASMessage = append(OriginalNASMessage, RESLength...)
 
-			return OriginalNASMessage, nil
+			if ResultOfCompare == true {
+				CompareResultTrue := []byte{0x01}
+
+				// Convert string to []byte
+				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
+				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				return OriginalNASMessage, nil
+			} else {
+				CompareResultFalse := []byte{0x00}
+
+				// Convert string to []byte
+				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
+				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				return OriginalNASMessage, nil
+			}
 		}
+
 	case byte(0x41):
 		// 0x41: Registration Request
 		// In order to trigger second Authentication which means NORA-AKA
-		return nil, nil
+
+		// Trigger NORA-AKA
+		var OriginalNASMessage []byte
+		RANDElementID := []byte{0x21}
+		AUTNElementID := []byte{0x20}
+
+		if length < 10 {
+			fmt.Println("Error: Insufficient bytes in receivedBytes.")
+		}
+		ue := &context.AmfUe{}
+		UEid := 1
+
+		NORAakaRAND := ue.GetAUTN(UEid, 1)
+		NORAakaAUTN := ue.GetAUTN(UEid, 2)
+
+		fmt.Println("NORA-AKA RAND: ", NORAakaRAND, " ,NORA-AKA AUTN: ", NORAakaAUTN)
+
+		// Start to compose the Nora authentication packet.
+		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
+		OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
+		OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
+		OriginalNASMessage = append(OriginalNASMessage, NORAakaRAND...)
+		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
+		OriginalNASMessage = append(OriginalNASMessage, NORAakaAUTN...)
+
+		return OriginalNASMessage, nil
 	default:
+
 		return nil, nil
 	}
 }
