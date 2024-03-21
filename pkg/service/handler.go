@@ -108,13 +108,13 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		fmt.Println("firstAutn: ", firstAutn)
 		fmt.Println("firstRES: ", firstRES)
 
-		count := 55
-		for i := 0; i <= 8; i++ {
-			fmt.Println("AUTN:", i, receivedBytes[count:count+16])
-			fmt.Println("RAND:", i, receivedBytes[count+16:count+32])
-			fmt.Println("RES:", i, receivedBytes[count+32:count+48])
-			count = count + 48
-		}
+		//count := 55
+		//for i := 0; i <= 8; i++ {
+		//	fmt.Println("AUTN:", i, receivedBytes[count:count+16])
+		//	fmt.Println("RAND:", i, receivedBytes[count+16:count+32])
+		//	fmt.Println("RES:", i, receivedBytes[count+32:count+48])
+		//	count = count + 48
+		//}
 
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
