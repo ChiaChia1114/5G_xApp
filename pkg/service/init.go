@@ -116,7 +116,7 @@ func handleConnection(conn net.Conn) {
 		octetString := buffer[:bytesRead]
 		//fmt.Println("Received OctetString:", octetString)
 		if octetString != nil {
-			OriginalNASMessage, OtherNASMessage := HandleMessageSelection(octetString)
+			OriginalNASMessage := HandleMessageSelection(octetString)
 			// Respond to client
 			//fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
 			_, err = conn.Write(OriginalNASMessage)
@@ -124,10 +124,6 @@ func handleConnection(conn net.Conn) {
 				fmt.Println("Error writing response:", err.Error())
 			}
 
-			//HandleOtherMessage
-			if OtherNASMessage != nil {
-				HandleOtherMessage(OtherNASMessage)
-			}
 		}
 		//_, err = conn.Write("No data")
 		//if err != nil {
