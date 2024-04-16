@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 	xApp_context "xApp/internal/context"
 	"xApp/internal/logger"
 	"xApp/internal/util"
@@ -116,6 +117,7 @@ func handleConnection(conn net.Conn) {
 		octetString := buffer[:bytesRead]
 		//fmt.Println("Received OctetString:", octetString)
 		if octetString != nil {
+			startTime := time.Now()
 			OriginalNASMessage, OtherNASMessage := HandleMessageSelection(octetString)
 			// Respond to client
 			//fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
@@ -123,6 +125,10 @@ func handleConnection(conn net.Conn) {
 			if err != nil {
 				fmt.Println("Error writing response:", err.Error())
 			}
+
+			endTime := time.Now()
+			serviceTime := endTime.Sub(startTime)
+			fmt.Println("Service time: %v", serviceTime)
 
 			//HandleOtherMessage
 			if OtherNASMessage != nil {
