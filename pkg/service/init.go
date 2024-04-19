@@ -15,6 +15,7 @@ import (
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
+	"time"
 )
 
 type XApp struct {
@@ -116,6 +117,7 @@ func handleConnection(conn net.Conn) {
 		octetString := buffer[:bytesRead]
 		//fmt.Println("Received OctetString:", octetString)
 		if octetString != nil {
+			startTime := time.Now()
 			OriginalNASMessage := HandleMessageSelection(octetString)
 			// Respond to client
 			//fmt.Println("OriginalNASMessage: ", OriginalNASMessage)
@@ -123,6 +125,10 @@ func handleConnection(conn net.Conn) {
 			if err != nil {
 				fmt.Println("Error writing response:", err.Error())
 			}
+
+			endTime := time.Now()
+			serviceTime := endTime.Sub(startTime)
+			fmt.Println("NORA-AKA Service time: %v", serviceTime)
 
 		}
 		//_, err = conn.Write("No data")
