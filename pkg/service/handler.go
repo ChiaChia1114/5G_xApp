@@ -77,7 +77,8 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 }
 
 func HandleMessageSelection(octet []byte) []byte {
-	var startTime, endTime time.Time
+	var startTime time.Time
+	var endTime time.Time
 	receivedBytes := octet
 	DetectByte := receivedBytes[2:3]
 	length := len(receivedBytes)
