@@ -15,7 +15,6 @@ func HandleCompareRES(RES []byte) bool {
 	if !ok {
 		fmt.Println("No firstRES found for UEid:", UEid)
 	}
-	fmt.Println("RES: ", RES)
 	DeleteFirstres := context.DeleteFirstRESByUEid(UEid)
 	if !DeleteFirstres {
 		fmt.Println("Delete First RES Failed")
