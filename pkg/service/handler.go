@@ -100,14 +100,10 @@ func HandleMessageSelection(octet []byte) []byte {
 		// Separate opc and k
 		opcValue := receivedBytes[7:39]
 		kValue := receivedBytes[39:71]
-		fmt.Println("opcValue:", opcValue)
-		fmt.Println("kValue:", kValue)
 
 		// Generate the res with the function of xApp_auth
 		opcStr := string(opcValue)
 		kStr := string(kValue)
-		fmt.Println("opcValue:", opcStr)
-		fmt.Println("kValue:", kStr)
 
 		av, result := XAppAKAGenerateAUTH(opcStr, kStr)
 		if !result {
@@ -131,10 +127,6 @@ func HandleMessageSelection(octet []byte) []byte {
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
-
-		fmt.Println("RANDhexString: ", RANDnewBytes)
-		fmt.Println("AutnnewBytes: ", AutnnewBytes)
-		fmt.Println("XREStartnexBytes: ", XREStartnexBytes)
 
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
