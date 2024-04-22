@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 	"xApp/pkg/service/context"
 )
 
@@ -14,10 +15,7 @@ func HandleCompareRES(RES []byte) bool {
 	res, ok := context.GetRESValueByUEid(UEid)
 	if !ok {
 		fmt.Println("No RES found for UEid:", UEid)
-	} else {
-		fmt.Println("RES for UEid", UEid, ":", res)
 	}
-	fmt.Println("Received RES: ", RES)
 
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
@@ -46,16 +44,12 @@ func HandleCompareRES(RES []byte) bool {
 
 func HandleNORAAKACompareRES(RES []byte) bool {
 	// Compare RES and XRES
-	// if same, true. else false
 
 	UEid := 1
 	NORAakaRES, GetRESResult := context.GetRESValueByUEid(UEid)
 	if !GetRESResult {
 		fmt.Println("Error for getting RES from NORA-AKA procedure.")
 	}
-
-	fmt.Println("RES: ", NORAakaRES)
-	fmt.Println("RES from UE: ", RES)
 
 	// Compare lengths of slices first
 	if len(NORAakaRES) != len(RES) {
@@ -83,6 +77,7 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 }
 
 func HandleMessageSelection(octet []byte) []byte {
+	var startTime, endTime time.Time
 	receivedBytes := octet
 	DetectByte := receivedBytes[2:3]
 	length := len(receivedBytes)
@@ -95,6 +90,7 @@ func HandleMessageSelection(octet []byte) []byte {
 		if length < 10 {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
 		}
+		startTime = time.Now()
 		Header := receivedBytes[:7]
 
 		// Separate opc and k
@@ -170,7 +166,10 @@ func HandleMessageSelection(octet []byte) []byte {
 
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
-				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				endTime = time.Now()
+				serviceTime := endTime.Sub(startTime)
+				fmt.Println("First Authentication Transmission time: %v", serviceTime)
 
 				return OriginalNASMessage
 			} else {
@@ -178,7 +177,10 @@ func HandleMessageSelection(octet []byte) []byte {
 
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
-				//fmt.Println("ResultOfCompare: ", OriginalNASMessage)
+
+				endTime = time.Now()
+				serviceTime := endTime.Sub(startTime)
+				fmt.Println("First Authentication Transmission time: %v", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -192,12 +194,20 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
+				endTime = time.Now()
+				serviceTime := endTime.Sub(startTime)
+				fmt.Println("NORA-AKA Transmission time: %v", serviceTime)
+
 				return OriginalNASMessage
 			} else {
 				CompareResultFalse := []byte{0x00}
 
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
+
+				endTime = time.Now()
+				serviceTime := endTime.Sub(startTime)
+				fmt.Println("NORA-AKA Transmission time: %v", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -226,9 +236,6 @@ func HandleMessageSelection(octet []byte) []byte {
 			fmt.Println("Error for empty kValue")
 		}
 
-		fmt.Println("opcValue:", opcValue)
-		fmt.Println("kValue:", kValue)
-
 		av, result := XAppAKAGenerateAUTH(opcValue, kValue)
 		if !result {
 			fmt.Println("Error for generate the Authentication vector.")
@@ -251,10 +258,6 @@ func HandleMessageSelection(octet []byte) []byte {
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
-
-		fmt.Println("RANDhexString: ", RANDnewBytes)
-		fmt.Println("AutnnewBytes: ", AutnnewBytes)
-		fmt.Println("XREStartnexBytes: ", XREStartnexBytes)
 
 		// Start to compose the Nora authentication packet.
 		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}

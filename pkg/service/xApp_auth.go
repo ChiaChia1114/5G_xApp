@@ -89,10 +89,7 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 		} else {
 			hasOPC = true
 		}
-	} else {
-		fmt.Println("opcStr length is ", len(opcStr))
 	}
-
 	if !hasOPC {
 		response = nil
 		return nil, false
@@ -111,8 +108,8 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 		fmt.Println("err:", err)
 		return nil, false
 	}
-	fmt.Println("sqnStr: ", sqnStr)
-	fmt.Println("K=[%x], sqn=[%x], OPC=[%x]", k, sqn, opc)
+	//fmt.Println("sqnStr: ", sqnStr)
+	//fmt.Println("K=[%x], sqn=[%x], OPC=[%x]", k, sqn, opc)
 
 	hexString := "8000"
 	//AMF, err := hex.DecodeString(authSubs.AuthenticationManagementField)
@@ -121,7 +118,7 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 		fmt.Println("err:", err)
 		return nil, false
 	}
-	fmt.Println("RAND=[%x], AMF=[%x]", RAND, AMF)
+	//fmt.Println("RAND=[%x], AMF=[%x]", RAND, AMF)
 
 	// increment sqn
 	bigSQN := big.NewInt(0)
@@ -157,18 +154,18 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 	if err != nil {
 		fmt.Println("milenage F2345 err:", err)
 	}
-	fmt.Println("milenage RES=[%s]", hex.EncodeToString(RES))
+	//fmt.Println("milenage RES=[%s]", hex.EncodeToString(RES))
 
 	// Generate AUTN
-	fmt.Println("SQN=[%x], AK=[%x]", sqn, AK)
-	fmt.Println("AMF=[%x], macA=[%x]", AMF, macA)
+	//fmt.Println("SQN=[%x], AK=[%x]", sqn, AK)
+	//fmt.Println("AMF=[%x], macA=[%x]", AMF, macA)
 	SQNxorAK := make([]byte, 6)
 	for i := 0; i < len(sqn); i++ {
 		SQNxorAK[i] = sqn[i] ^ AK[i]
 	}
-	fmt.Println("SQN xor AK=[%x]", SQNxorAK)
+	//fmt.Println("SQN xor AK=[%x]", SQNxorAK)
 	AUTN := append(append(SQNxorAK, AMF...), macA...)
-	fmt.Println("AUTN=[%x]", AUTN)
+	//fmt.Println("AUTN=[%x]", AUTN)
 
 	var av AuthenticationVector
 
@@ -185,7 +182,7 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 		fmt.Println("Get kdfValForXresStar err: %+v", err)
 	}
 	xresStar := kdfValForXresStar[len(kdfValForXresStar)/2:]
-	fmt.Println("xresStar=[%x]", xresStar)
+	//fmt.Println("xresStar=[%x]", xresStar)
 
 	// derive Kausf
 	FC = ueauth.FC_FOR_KAUSF_DERIVATION
