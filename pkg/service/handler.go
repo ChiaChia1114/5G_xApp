@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"xApp/pkg/service/context"
+	filer "xApp/pkg/service/exportfile"
 	Authtimer "xApp/pkg/service/timer"
 )
 
@@ -145,12 +146,10 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
 				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("First Authentication transmission time: %v", serviceTime)
-				//timeValue, err := filer.ReadTimeFromFile(serviceTime)
-				//if err != nil {
-				//	fmt.Println(err)
-				//}
+				err := filer.ReadTimeFromFile(1, endTime)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				return OriginalNASMessage, nil
 			} else {
@@ -158,8 +157,10 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
 				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("First Authentication transmission time: %v", serviceTime)
+				err := filer.ReadTimeFromFile(1, endTime)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				return OriginalNASMessage, nil
 			}
@@ -176,8 +177,10 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
 				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("NORA-AKA transmission time: %v", serviceTime)
+				err := filer.ReadTimeFromFile(2, endTime)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				return OriginalNASMessage, nil
 			} else {
@@ -185,8 +188,10 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
 				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("NORA-AKA transmission time: %v", serviceTime)
+				err := filer.ReadTimeFromFile(2, endTime)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				return OriginalNASMessage, nil
 			}

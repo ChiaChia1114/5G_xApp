@@ -2,8 +2,10 @@ package exportfile
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
+	Authtimer "xApp/pkg/service/timer"
 )
 
 func CreateTimeToFile() error {
@@ -40,11 +42,17 @@ func WriteTimeToFile() error {
 	return nil
 }
 
-//func ReadTimeFromFile(timeValue time.Time) (bool, error) {
-//	err := ioutil.WriteFile("time.txt", []byte(fmt.Sprintf("%d", timeValue.Milliseconds())), 0644)
-//	if err != nil {
-//		return false, fmt.Errorf("error writing time to file: %v", err)
-//	}
-//
-//	return true, nil
-//}
+func ReadTimeFromFile(Type int, endTime time.Time) error {
+	serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+	if Type == 1 {
+		fmt.Println("First Authentication transmission time: %v", serviceTime)
+	} else {
+		fmt.Println("NORA-AKA transmission time: %v", serviceTime)
+	}
+	err := ioutil.WriteFile("time.txt", []byte(fmt.Sprintf("%d", serviceTime)), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing time to file: %v", err)
+	}
+
+	return nil
+}
