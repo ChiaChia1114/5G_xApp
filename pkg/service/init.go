@@ -11,10 +11,12 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 	xApp_context "xApp/internal/context"
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
+	Authtimer "xApp/pkg/service/timer"
 )
 
 type XApp struct {
@@ -113,6 +115,7 @@ func handleConnection(conn net.Conn) {
 			fmt.Println("Error reading:", err.Error())
 			return
 		}
+		fmt.Println("start execute the thread.")
 		octetString := buffer[:bytesRead]
 		//fmt.Println("Received OctetString:", octetString)
 		if octetString != nil {
@@ -149,6 +152,18 @@ func (xApp *XApp) Start() {
 	}
 	defer ln.Close()
 	fmt.Println("Server is listening on port 12345")
+
+	// Terry Modify start: Add Timer to calculate service time
+	StartTime := time.Now()
+	TimernewUe := Authtimer.NewServiceTimer(1, StartTime)
+	Authtimer.StoreTimeStamp(TimernewUe)
+	// Terry Modify end: Add Timer to calculate service time
+
+	//err = filer.WriteTimeToFile()
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
 
 	go func() {
 		for {
