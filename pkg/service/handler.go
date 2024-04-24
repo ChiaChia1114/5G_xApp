@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"xApp/pkg/service/context"
+	Authtimer "xApp/pkg/service/timer"
 )
 
 func HandleCompareRES(RES []byte) bool {
@@ -77,8 +78,6 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 }
 
 func HandleMessageSelection(octet []byte) []byte {
-	var startTime time.Time
-	var endTime time.Time
 	receivedBytes := octet
 	DetectByte := receivedBytes[2:3]
 	length := len(receivedBytes)
@@ -91,7 +90,13 @@ func HandleMessageSelection(octet []byte) []byte {
 		if length < 10 {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
 		}
-		startTime = time.Now()
+
+		startTime := time.Now()
+		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
+		if !ResultofSetTimer {
+			fmt.Println("Set Start time failed.")
+		}
+
 		Header := receivedBytes[:7]
 
 		// Separate opc and k
@@ -168,9 +173,13 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
-				endTime = time.Now()
-				serviceTime := endTime.Sub(startTime)
-				fmt.Println("First Authentication Transmission time: %v", serviceTime)
+				endTime := time.Now()
+				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				fmt.Println("First Authentication transmission time: ", serviceTime)
+				// err := filer.ReadTimeFromFile(1, endTime)
+				// if err != nil {
+				// 	fmt.Println(err)
+				// }
 
 				return OriginalNASMessage
 			} else {
@@ -179,9 +188,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
-				endTime = time.Now()
-				serviceTime := endTime.Sub(startTime)
-				fmt.Println("First Authentication Transmission time: %v", serviceTime)
+				endTime := time.Now()
+				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				fmt.Println("First Authentication transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -195,9 +204,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
-				endTime = time.Now()
-				serviceTime := endTime.Sub(startTime)
-				fmt.Println("NORA-AKA Transmission time: %v", serviceTime)
+				endTime := time.Now()
+				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			} else {
@@ -206,9 +215,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
-				endTime = time.Now()
-				serviceTime := endTime.Sub(startTime)
-				fmt.Println("NORA-AKA Transmission time: %v", serviceTime)
+				endTime := time.Now()
+				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -220,6 +229,14 @@ func HandleMessageSelection(octet []byte) []byte {
 
 		// Trigger NORA-AKA
 		var OriginalNASMessage []byte
+
+		startTime := time.Now()
+		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
+		if !ResultofSetTimer {
+			fmt.Println("Set Start time failed.")
+		}
+
+
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
 

@@ -15,6 +15,8 @@ import (
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
+	Authtimer "xApp/pkg/service/timer"
+	"time"
 )
 
 type XApp struct {
@@ -150,6 +152,12 @@ func (xApp *XApp) Start() {
 	}
 	defer ln.Close()
 	fmt.Println("Server is listening on port 12345")
+
+	// Terry Modify start: Add Timer to calculate service time
+	StartTime := time.Now()
+	TimernewUe := Authtimer.NewServiceTimer(1, StartTime)
+	Authtimer.StoreTimeStamp(TimernewUe)
+	// Terry Modify end: Add Timer to calculate service time
 
 	go func() {
 		for {
