@@ -54,15 +54,15 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	UEid := 1
 	ue := &context.AmfUe{}
 	NORAakaRES := ue.GetAUTN(UEid, 3)
-	AuthCount := ue.GetCount(UEid)
+	AuthCount := context.GetCount(UEid)
 	if AuthCount == 9 {
 		// Delete the UE MAP for the creation
-		ue.DeleteAmfUe(UEid)
+		context.DeleteAmfUe(UEid)
 	} else if AuthCount == 0 {
 		fmt.Println("Create a new UE map")
 	} else {
 		// UE count plus 1
-		ue.CountPlus(UEid)
+		context.CountPlus(UEid)
 	}
 
 	// Compare lengths of slices first

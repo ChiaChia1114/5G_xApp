@@ -98,7 +98,7 @@ func (ue *AmfUe) SetAuthParam(UEid int, res []byte, AuthType int, counter int) {
 		fmt.Println("Set Auth Parameter failed.")
 	}
 }
-func (ue *AmfUe) GetCount(UEid int) int {
+func GetCount(UEid int) int {
 	ue, ok := AmfUeMap[UEid]
 	if ok {
 		Count := ue.count
@@ -107,14 +107,14 @@ func (ue *AmfUe) GetCount(UEid int) int {
 	return 0
 }
 
-func (ue *AmfUe) CountPlus(UEid int) bool {
+func CountPlus(UEid int) bool {
 	ue, ok := AmfUeMap[UEid]
 	if ok {
 		Count := ue.count
 		Count++
 		ue.count = Count
 		StoreAmfUe(ue)
-		CheckResult := ue.GetCount(UEid)
+		CheckResult := GetCount(UEid)
 		if CheckResult != Count {
 			return false
 		}
@@ -122,7 +122,7 @@ func (ue *AmfUe) CountPlus(UEid int) bool {
 	return true
 }
 
-func (ue *AmfUe) DeleteAmfUe(UEid int) {
+func DeleteAmfUe(UEid int) {
 	delete(AmfUeMap, UEid)
 }
 
