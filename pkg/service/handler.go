@@ -31,6 +31,9 @@ func HandleCompareRES(RES []byte) bool {
 	}
 	RES = NewRES
 
+	fmt.Println("XRES: ", res)
+	fmt.Println("RES: ", RES)
+
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
 		// Slices are not equal if their lengths are different
@@ -63,27 +66,21 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	UEid := 1
 	ue := &context.AmfUe{}
 	NORAakaRES := ue.GetAUTN(UEid, 3)
-	AuthCount := context.GetCount(UEid)
-	if AuthCount == 8 {
-		// Delete the UE MAP for the creation
-		context.DeleteAmfUe(UEid)
-	} else {
-		// UE count plus 1
-		context.CountPlus(UEid)
-	}
-
-	if AuthCount == 0 {
-		fmt.Println("Create a new UE map")
-	}
 
 	// Encryption with the xApp token
 	xAppToken := context.GlobalToken
 	// XOR the two byte slices
+	NewNORAakaRES, err := context.XorBytes(NORAakaRES, xAppToken)
 	NewRES, err := context.XorBytes(RES, xAppToken)
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
 	RES = NewRES
+	NORAakaRES = NewNORAakaRES
+
+	fmt.Println("XRES: ", NORAakaRES)
+	fmt.Println("RES: ", RES)
+
 
 	// Compare lengths of slices first
 	if len(NORAakaRES) != len(RES) {
@@ -124,6 +121,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		if length < 10 {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
 		}
+
 
 		startTime := time.Now()
 		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
@@ -243,6 +241,20 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 
 		var OriginalNASMessage []byte
 
+		UEid := 1
+		AuthCount := context.GetCount(UEid)
+		if AuthCount == 7 {
+			// Delete the UE MAP for the creation
+			context.DeleteAmfUe(UEid)
+		} else {
+			// UE count plus 1
+			context.CountPlus(UEid)
+		}
+	
+		if AuthCount == 0 {
+			fmt.Println("Create a new UE map")
+		}
+
 		startTime := time.Now()
 		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
 		if !ResultofSetTimer {
@@ -252,7 +264,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
 		ue := &context.AmfUe{}
-		UEid := 1
 		NORAakaRAND := ue.GetAUTN(UEid, 1)
 		NORAakaAUTN := ue.GetAUTN(UEid, 2)
 
