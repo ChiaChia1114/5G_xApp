@@ -22,6 +22,15 @@ func HandleCompareRES(RES []byte) bool {
 		fmt.Println("Delete First RES Failed")
 	}
 
+	// Encryption with the xApp token
+	xAppToken := context.GlobalToken
+	// XOR the two byte slices
+	NewRES, err := context.XorBytes(RES, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	RES = NewRES
+
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
 		// Slices are not equal if their lengths are different
@@ -55,15 +64,26 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	ue := &context.AmfUe{}
 	NORAakaRES := ue.GetAUTN(UEid, 3)
 	AuthCount := context.GetCount(UEid)
-	if AuthCount == 9 {
+	if AuthCount == 8 {
 		// Delete the UE MAP for the creation
 		context.DeleteAmfUe(UEid)
-	} else if AuthCount == 0 {
-		fmt.Println("Create a new UE map")
 	} else {
 		// UE count plus 1
 		context.CountPlus(UEid)
 	}
+
+	if AuthCount == 0 {
+		fmt.Println("Create a new UE map")
+	}
+
+	// Encryption with the xApp token
+	xAppToken := context.GlobalToken
+	// XOR the two byte slices
+	NewRES, err := context.XorBytes(RES, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	RES = NewRES
 
 	// Compare lengths of slices first
 	if len(NORAakaRES) != len(RES) {
@@ -115,6 +135,15 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		firstRand := receivedBytes[7:23]
 		firstAutn := receivedBytes[23:39]
 		firstRES := receivedBytes[39:55]
+
+		// Encryption with the xApp token
+		xAppToken := context.GlobalToken
+		// XOR the two byte slices
+		NewXRES, err := context.XorBytes(firstRES, xAppToken)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		firstRES = NewXRES
 
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}

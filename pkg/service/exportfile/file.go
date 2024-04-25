@@ -2,7 +2,6 @@ package exportfile
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 	Authtimer "xApp/pkg/service/timer"
@@ -49,10 +48,10 @@ func ReadTimeFromFile(Type int, endTime time.Time) error {
 	} else {
 		fmt.Println("NORA-AKA transmission time: %v", serviceTime)
 	}
-	err := ioutil.WriteFile("time.txt", []byte(fmt.Sprintf("%d", serviceTime)), 0644)
-	if err != nil {
-		return fmt.Errorf("error writing time to file: %v", err)
-	}
+	//err := ioutil.WriteFile("time.txt", []byte(fmt.Sprintf("%d", serviceTime)), 0644)
+	//if err != nil {
+	//	return fmt.Errorf("error writing time to file: %v", err)
+	//}
 
 	return nil
 }

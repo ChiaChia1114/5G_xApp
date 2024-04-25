@@ -16,6 +16,7 @@ import (
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
+	context "xApp/pkg/service/context"
 	filer "xApp/pkg/service/exportfile"
 	Authtimer "xApp/pkg/service/timer"
 )
@@ -159,6 +160,11 @@ func (xApp *XApp) Start() {
 	TimernewUe := Authtimer.NewServiceTimer(1, StartTime)
 	Authtimer.StoreTimeStamp(TimernewUe)
 	// Terry Modify end: Add Timer to calculate service time
+
+	_, err = context.GenerateToken()
+	if err != nil {
+		fmt.Println("Error GenerateToken:", err.Error())
+	}
 
 	err = filer.WriteTimeToFile()
 	if err != nil {
