@@ -9,6 +9,7 @@ type AmfUe struct {
 	RANDMap  map[int][]byte
 	AUTNMap  map[int][]byte
 	RESMap   map[int][]byte
+	count    int
 }
 
 func NewAmfUe(UEid int, firstRES []byte) *AmfUe {
@@ -18,6 +19,7 @@ func NewAmfUe(UEid int, firstRES []byte) *AmfUe {
 		RANDMap:  make(map[int][]byte), // Initialize the slice of byte slices
 		AUTNMap:  make(map[int][]byte),
 		RESMap:   make(map[int][]byte),
+		count:    0,
 	}
 }
 
@@ -95,6 +97,33 @@ func (ue *AmfUe) SetAuthParam(UEid int, res []byte, AuthType int, counter int) {
 	default:
 		fmt.Println("Set Auth Parameter failed.")
 	}
+}
+func (ue *AmfUe) GetCount(UEid int) int {
+	ue, ok := AmfUeMap[UEid]
+	if ok {
+		Count := ue.count
+		return Count
+	}
+	return 0
+}
+
+func (ue *AmfUe) CountPlus(UEid int) bool {
+	ue, ok := AmfUeMap[UEid]
+	if ok {
+		Count := ue.count
+		Count++
+		ue.count = Count
+		StoreAmfUe(ue)
+		CheckResult := ue.GetCount(UEid)
+		if CheckResult != Count {
+			return false
+		}
+	}
+	return true
+}
+
+func (ue *AmfUe) DeleteAmfUe(UEid int) {
+	delete(AmfUeMap, UEid)
 }
 
 func (ue *AmfUe) GetAUTN(UEid int, AuthType int) []byte {
