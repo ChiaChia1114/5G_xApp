@@ -167,9 +167,28 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		var OriginalNASMessage []byte
 		Header := receivedBytes[:4]
 		RES := receivedBytes[5:21]
+		UEid := 1
+
+		AuthCount := context.GetCount(UEid)
+		fmt.Println("Count: ", AuthCount)
+		if AuthCount == 9 {
+			// Delete the UE MAP for the creation
+			context.DeleteAmfUe(UEid)
+			CheckUE := context.CheckUEStatus(UEid)
+			if !CheckUE {
+				fmt.Println("Delete UE status context success.")
+			}
+		} else {
+			// UE count plus 1
+			context.CountPlus(UEid)
+		}
+	
+		if AuthCount == 0 {
+			fmt.Println("Create a new UE map")
+		}
 
 		// Check if it is triggger NORA-AKA or not.
-		UEid := 1
+		
 		checkStatus := context.CheckUserStatus(UEid)
 		if checkStatus {
 			ResultOfCompare := HandleCompareRES(RES)
@@ -242,18 +261,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		var OriginalNASMessage []byte
 
 		UEid := 1
-		AuthCount := context.GetCount(UEid)
-		if AuthCount == 7 {
-			// Delete the UE MAP for the creation
-			context.DeleteAmfUe(UEid)
-		} else {
-			// UE count plus 1
-			context.CountPlus(UEid)
-		}
-	
-		if AuthCount == 0 {
-			fmt.Println("Create a new UE map")
-		}
 
 		startTime := time.Now()
 		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
@@ -279,6 +286,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
 		OriginalNASMessage = append(OriginalNASMessage, NORAakaAUTN...)
 
+
 		return OriginalNASMessage, nil
 	default:
 
@@ -293,7 +301,7 @@ func HandleOtherMessage(OtherMessage []byte) {
 	UEid := 1
 	count := 0
 
-	for counter := 0; counter <= 8; counter++ {
+	for counter := 0; counter <= 9; counter++ {
 		ue.SetAuthParam(UEid, Message[count:count+16], 1, counter)
 		ue.SetAuthParam(UEid, Message[count+16:count+32], 2, counter)
 		ue.SetAuthParam(UEid, Message[count+32:count+48], 3, counter)

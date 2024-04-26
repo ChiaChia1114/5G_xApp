@@ -57,6 +57,15 @@ func CheckUserStatus(UEid int) bool {
 	return true
 }
 
+//Check UE return the booling value corresponding to the given UEid.
+func CheckUEStatus(UEid int) bool {
+	_, ok := AmfUeMap[UEid]
+	if !ok {
+		return false
+	}
+	return true
+}
+
 //Delete FirstRES returns the booling value corresponding to the given UEid.
 func DeleteFirstRESByUEid(UEid int) bool {
 	ue, ok := AmfUeMap[UEid]
