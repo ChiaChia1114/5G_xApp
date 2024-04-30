@@ -31,8 +31,8 @@ func HandleCompareRES(RES []byte) bool {
 	}
 	RES = NewRES
 
-	fmt.Println("XRES: ", res)
-	fmt.Println("RES: ", RES)
+	// fmt.Println("XRES: ", res)
+	// fmt.Println("RES: ", RES)
 
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
@@ -78,8 +78,8 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	RES = NewRES
 	NORAakaRES = NewNORAakaRES
 
-	fmt.Println("XRES: ", NORAakaRES)
-	fmt.Println("RES: ", RES)
+	// fmt.Println("XRES: ", NORAakaRES)
+	// fmt.Println("RES: ", RES)
 
 
 	// Compare lengths of slices first
@@ -158,6 +158,8 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		newUe := context.NewAmfUe(1, firstRES)
 		context.StoreAmfUe(newUe)
 
+		fmt.Println("OtherNASMessage:", OtherNASMessage)
+
 		return OriginalNASMessage, OtherNASMessage
 	case byte(0x57):
 		// Handle Authentication Response
@@ -169,23 +171,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		RES := receivedBytes[5:21]
 		UEid := 1
 
-		AuthCount := context.GetCount(UEid)
-		fmt.Println("Count: ", AuthCount)
-		if AuthCount == 9 {
-			// Delete the UE MAP for the creation
-			context.DeleteAmfUe(UEid)
-			CheckUE := context.CheckUEStatus(UEid)
-			if !CheckUE {
-				fmt.Println("Delete UE status context success.")
-			}
-		} else {
-			// UE count plus 1
-			context.CountPlus(UEid)
-		}
-	
-		if AuthCount == 0 {
-			fmt.Println("Create a new UE map")
-		}
 
 		// Check if it is triggger NORA-AKA or not.
 		
@@ -207,6 +192,23 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
+				AuthCount := context.GetCount(UEid)
+				if AuthCount == 9 {
+					// Delete the UE MAP for the creation
+					context.DeleteAmfUe(UEid)
+					CheckUE := context.CheckUEStatus(UEid)
+					if !CheckUE {
+						fmt.Println("Delete UE status context success.")
+					}
+				} else {
+					// UE count plus 1
+					context.CountPlus(UEid)
+				}
+			
+				if AuthCount == 0 {
+					fmt.Println("Create a new UE map")
+				}
+
 				return OriginalNASMessage, nil
 			} else {
 				CompareResultFalse := []byte{0x00}
@@ -216,6 +218,24 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				err := filer.ReadTimeFromFile(1, endTime)
 				if err != nil {
 					fmt.Println(err)
+				}
+
+				AuthCount := context.GetCount(UEid)
+				// fmt.Println("Count: ", AuthCount)
+				if AuthCount == 9 {
+					// Delete the UE MAP for the creation
+					context.DeleteAmfUe(UEid)
+					CheckUE := context.CheckUEStatus(UEid)
+					if !CheckUE {
+						fmt.Println("Delete UE status context success.")
+					}
+				} else {
+					// UE count plus 1
+					context.CountPlus(UEid)
+				}
+			
+				if AuthCount == 0 {
+					fmt.Println("Create a new UE map")
 				}
 
 				return OriginalNASMessage, nil
@@ -238,6 +258,24 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
+				AuthCount := context.GetCount(UEid)
+				fmt.Println("Count: ", AuthCount)
+				if AuthCount == 9 {
+					// Delete the UE MAP for the creation
+					context.DeleteAmfUe(UEid)
+					CheckUE := context.CheckUEStatus(UEid)
+					if !CheckUE {
+						fmt.Println("Delete UE status context success.")
+					}
+				} else {
+					// UE count plus 1
+					context.CountPlus(UEid)
+				}
+			
+				if AuthCount == 0 {
+					fmt.Println("Create a new UE map")
+				}
+
 				return OriginalNASMessage, nil
 			} else {
 				CompareResultFalse := []byte{0x00}
@@ -247,6 +285,24 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 				err := filer.ReadTimeFromFile(2, endTime)
 				if err != nil {
 					fmt.Println(err)
+				}
+
+				AuthCount := context.GetCount(UEid)
+				fmt.Println("Count: ", AuthCount)
+				if AuthCount == 9 {
+					// Delete the UE MAP for the creation
+					context.DeleteAmfUe(UEid)
+					CheckUE := context.CheckUEStatus(UEid)
+					if !CheckUE {
+						fmt.Println("Delete UE status context success.")
+					}
+				} else {
+					// UE count plus 1
+					context.CountPlus(UEid)
+				}
+			
+				if AuthCount == 0 {
+					fmt.Println("Create a new UE map")
 				}
 
 				return OriginalNASMessage, nil

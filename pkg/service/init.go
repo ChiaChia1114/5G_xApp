@@ -117,7 +117,7 @@ func handleConnection(conn net.Conn) {
 			fmt.Println("Error reading:", err.Error())
 			return
 		}
-		fmt.Println("start execute the thread.")
+		// fmt.Println("start execute the thread.")
 		octetString := buffer[:bytesRead]
 		//fmt.Println("Received OctetString:", octetString)
 		if octetString != nil {
