@@ -1,0 +1,37 @@
+package context
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+)
+
+var GlobalToken []byte
+
+func GenerateToken() ([]byte, error) {
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		panic(err)
+		return nil, err
+	}
+
+	token := make([]byte, hex.EncodedLen(len(randomBytes)))
+	hex.Encode(token, randomBytes)
+
+	GlobalToken = randomBytes
+
+	return randomBytes, nil
+}
+
+func XorBytes(a, b []byte) ([]byte, error) {
+	if len(a) != len(b) {
+		return nil, fmt.Errorf("the lengths of the two byte slices must be equal")
+	}
+
+	result := make([]byte, len(a))
+	for i := range a {
+		result[i] = a[i] ^ b[i]
+	}
+	return result, nil
+}

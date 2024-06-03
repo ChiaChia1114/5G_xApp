@@ -12,6 +12,7 @@ import (
 	"runtime/debug"
 	"syscall"
 	xApp_context "xApp/internal/context"
+	context "xApp/pkg/service/context"
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
@@ -152,6 +153,11 @@ func (xApp *XApp) Start() {
 	}
 	defer ln.Close()
 	fmt.Println("Server is listening on port 12345")
+
+	_, err = context.GenerateToken()
+	if err != nil {
+		fmt.Println("Error GenerateToken:", err.Error())
+	}
 
 	// Terry Modify start: Add Timer to calculate service time
 	StartTime := time.Now()

@@ -130,6 +130,10 @@ func HandleMessageSelection(octet []byte) []byte {
 			fmt.Println("Error decoding hex string:", err)
 		}
 
+		fmt.Println("RAND: ", RANDnewBytes)
+		fmt.Println("AUTN: ", AutnnewBytes)
+		fmt.Println("XRES: ", XREStartnexBytes)
+
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
 
@@ -173,9 +177,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
-				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("First Authentication transmission time: ", serviceTime)
+				// endTime := time.Now()
+				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				// fmt.Println("First Authentication transmission time: ", serviceTime)
 				// err := filer.ReadTimeFromFile(1, endTime)
 				// if err != nil {
 				// 	fmt.Println(err)
@@ -188,9 +192,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
-				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("First Authentication transmission time: ", serviceTime)
+				// endTime := time.Now()
+				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				// fmt.Println("First Authentication transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -204,9 +208,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
 
-				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("NORA-AKA transmission time: ", serviceTime)
+				// endTime := time.Now()
+				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				// fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			} else {
@@ -215,9 +219,9 @@ func HandleMessageSelection(octet []byte) []byte {
 				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
 
-				endTime := time.Now()
-				serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				fmt.Println("NORA-AKA transmission time: ", serviceTime)
+				// endTime := time.Now()
+				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
+				// fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -276,6 +280,10 @@ func HandleMessageSelection(octet []byte) []byte {
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
+ 
+		fmt.Println("RAND: ", RANDnewBytes)
+		fmt.Println("AUTN: ", AutnnewBytes)
+		fmt.Println("XRES: ", XREStartnexBytes)
 
 		// Start to compose the Nora authentication packet.
 		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
