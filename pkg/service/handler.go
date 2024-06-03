@@ -18,6 +18,15 @@ func HandleCompareRES(RES []byte) bool {
 		fmt.Println("No RES found for UEid:", UEid)
 	}
 
+	xAppToken := context.GlobalToken
+	NewRES, err := context.XorBytes(RES, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	RES = NewRES
+	fmt.Println("RES: ", RES)
+	fmt.Println("XRES: ", res)
+
 	// Compare lengths of slices first
 	if len(res) != len(RES) {
 		// Slices are not equal if their lengths are different
@@ -51,6 +60,15 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	if !GetRESResult {
 		fmt.Println("Error for getting RES from NORA-AKA procedure.")
 	}
+
+	xAppToken := context.GlobalToken
+	NewRES, err := context.XorBytes(RES, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	RES = NewRES
+	fmt.Println("RES: ", RES)
+	fmt.Println("XRES: ", NORAakaRES)
 
 	// Compare lengths of slices first
 	if len(NORAakaRES) != len(RES) {
@@ -130,9 +148,9 @@ func HandleMessageSelection(octet []byte) []byte {
 			fmt.Println("Error decoding hex string:", err)
 		}
 
-		fmt.Println("RAND: ", RANDnewBytes)
-		fmt.Println("AUTN: ", AutnnewBytes)
-		fmt.Println("XRES: ", XREStartnexBytes)
+		fmt.Println("T-RAND: ", RANDnewBytes)
+		fmt.Println("T-AUTN: ", AutnnewBytes)
+		fmt.Println("T-XRES: ", XREStartnexBytes)
 
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
@@ -240,7 +258,6 @@ func HandleMessageSelection(octet []byte) []byte {
 			fmt.Println("Set Start time failed.")
 		}
 
-
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
 
@@ -280,10 +297,10 @@ func HandleMessageSelection(octet []byte) []byte {
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
- 
-		fmt.Println("RAND: ", RANDnewBytes)
-		fmt.Println("AUTN: ", AutnnewBytes)
-		fmt.Println("XRES: ", XREStartnexBytes)
+
+		fmt.Println("T-RAND: ", RANDnewBytes)
+		fmt.Println("T-AUTN: ", AutnnewBytes)
+		fmt.Println("T-XRES: ", XREStartnexBytes)
 
 		// Start to compose the Nora authentication packet.
 		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}

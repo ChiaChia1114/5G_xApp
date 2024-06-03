@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"xApp/pkg/service/context"
 )
 
 type xAppAuthenticationParameterRAND struct {
@@ -95,12 +96,23 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 		return nil, false
 	}
 
+	xAppToken := context.GlobalToken
+
 	RAND := make([]byte, 16)
 	_, err = cryptoRand.Read(RAND)
 	if err != nil {
 		fmt.Println("err:", err)
 		return nil, false
 	}
+
+	fmt.Println("RAND: ", RAND)
+
+	var NewRAND []byte
+	NewRAND, err = context.XorBytes(RAND, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	RAND = NewRAND
 
 	sqnStr := "16f3b3f70ff2"
 	sqn, err := hex.DecodeString(sqnStr)
@@ -167,6 +179,15 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 	AUTN := append(append(SQNxorAK, AMF...), macA...)
 	//fmt.Println("AUTN=[%x]", AUTN)
 
+	fmt.Println("AUTN: ", AUTN)
+
+	var NewAUTN []byte
+	NewAUTN, err = context.XorBytes(AUTN, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	AUTN = NewAUTN
+
 	var av AuthenticationVector
 
 	// derive XRES*
@@ -188,6 +209,15 @@ func XAppAKAGenerateAUTH(OpcValue string, kValue string) (response *Authenticati
 	FC = ueauth.FC_FOR_KAUSF_DERIVATION
 	P0 = []byte(authInfoRequest.ServingNetworkName)
 	P1 = SQNxorAK
+
+	fmt.Println("XRES: ", xresStar)
+	// Add Token
+	var NewXRES []byte
+	NewXRES, err = context.XorBytes(xresStar, xAppToken)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	xresStar = NewXRES
 
 	// Fill in rand, xresStar, autn, kausf
 	av.Rand = hex.EncodeToString(RAND)
