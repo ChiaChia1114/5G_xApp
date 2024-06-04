@@ -11,13 +11,13 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 	xApp_context "xApp/internal/context"
-	context "xApp/pkg/service/context"
 	"xApp/internal/logger"
 	"xApp/internal/util"
 	"xApp/pkg/factory"
+	context "xApp/pkg/service/context"
 	Authtimer "xApp/pkg/service/timer"
-	"time"
 )
 
 type XApp struct {
@@ -126,6 +126,17 @@ func handleConnection(conn net.Conn) {
 			_, err = conn.Write(OriginalNASMessage)
 			if err != nil {
 				fmt.Println("Error writing response:", err.Error())
+			}
+
+			//HandleOtherMessage
+			UEid := 1
+			UE_status, result := context.GetCountByUEid(UEid)
+			if result != true {
+				fmt.Println("Failed to get UE count")
+			} else {
+				if UE_status == 0 {
+					HandleAuthenticationVectorsPreparetion()
+				}
 			}
 
 		}

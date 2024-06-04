@@ -252,11 +252,11 @@ func HandleMessageSelection(octet []byte) []byte {
 		// Trigger NORA-AKA
 		var OriginalNASMessage []byte
 
-		startTime := time.Now()
-		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
-		if !ResultofSetTimer {
-			fmt.Println("Set Start time failed.")
-		}
+		//startTime := time.Now()
+		//ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
+		//if !ResultofSetTimer {
+		//	fmt.Println("Set Start time failed.")
+		//}
 
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
@@ -265,56 +265,91 @@ func HandleMessageSelection(octet []byte) []byte {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
 		}
 
+		ue := &context.AmfUe{}
 		UEid := 1
-		opcValue, GetOpcResult := context.GetOpcValueByUEid(UEid)
-		if !GetOpcResult {
-			fmt.Println("Error for empty opcValue")
-		}
-		kValue, GetkResult := context.GetkValueByUEid(UEid)
-		if !GetkResult {
-			fmt.Println("Error for empty kValue")
-		}
 
-		av, result := XAppAKAGenerateAUTH(opcValue, kValue)
-		if !result {
-			fmt.Println("Error for generate the Authentication vector.")
+		UEcount, result := context.GetCountByUEid(UEid)
+		if result != true {
+			fmt.Println("Failed to get UE's count.")
 		}
+		RANDnewBytes := ue.GetRAND(UEid, UEcount)
+		AutnnewBytes := ue.GetAUTN(UEid, UEcount)
+		XREStartnexBytes := ue.GetXRES(UEid, UEcount)
 
-		RANDhexString := av.Rand
-		RANDnewBytes, err := hex.DecodeString(RANDhexString)
+		NEWRANDnewBytes, err := hex.DecodeString(RANDnewBytes)
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
 
-		AutnhexString := av.Autn
-		AutnnewBytes, err := hex.DecodeString(AutnhexString)
+		NEWAutnnewBytes, err := hex.DecodeString(AutnnewBytes)
+		if err != nil {
+			fmt.Println("Error decoding hex string:", err)
+		}
+		NEWXREStartnexBytes, err := hex.DecodeString(XREStartnexBytes)
 		if err != nil {
 			fmt.Println("Error decoding hex string:", err)
 		}
 
-		XREStarthexString := av.XresStar
-		XREStartnexBytes, err := hex.DecodeString(XREStarthexString)
-		if err != nil {
-			fmt.Println("Error decoding hex string:", err)
-		}
-
-		fmt.Println("T-RAND: ", RANDnewBytes)
-		fmt.Println("T-AUTN: ", AutnnewBytes)
-		fmt.Println("T-XRES: ", XREStartnexBytes)
+		fmt.Println("T-RAND: ", NEWRANDnewBytes)
+		fmt.Println("T-AUTN: ", NEWAutnnewBytes)
+		fmt.Println("T-XRES: ", NEWXREStartnexBytes)
 
 		// Start to compose the Nora authentication packet.
 		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
 		OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
 		OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, RANDnewBytes...)
+		OriginalNASMessage = append(OriginalNASMessage, NEWRANDnewBytes...)
 		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, AutnnewBytes...)
+		OriginalNASMessage = append(OriginalNASMessage, NEWAutnnewBytes...)
 
-		context.SetRESByUEid(UEid, XREStartnexBytes)
+		context.SetRESByUEid(UEid, NEWXREStartnexBytes)
+		if UEcount == 9 {
+			result = context.SetCountByUEid(UEid, 0)
+			if result != true {
+				fmt.Println("Store UE count failed.")
+			}
+			return OriginalNASMessage
+		}
+		UEcount++
+		result = context.SetCountByUEid(UEid, UEcount)
+		if result != true {
+			fmt.Println("Store UE count failed.")
+		}
 
 		return OriginalNASMessage
 	default:
 
 		return nil
 	}
+}
+
+func HandleAuthenticationVectorsPreparetion() {
+	ue := &context.AmfUe{}
+	UEid := 1
+
+	opcValue, GetOpcResult := context.GetOpcValueByUEid(UEid)
+	if !GetOpcResult {
+		fmt.Println("Error for empty opcValue")
+	}
+	kValue, GetkResult := context.GetkValueByUEid(UEid)
+	if !GetkResult {
+		fmt.Println("Error for empty kValue")
+	}
+
+	for counter := 0; counter <= 9; counter++ {
+
+		av, result := XAppAKAGenerateAUTH(opcValue, kValue)
+		if !result {
+			fmt.Println("Error for generate the Authentication vector.")
+		}
+
+		ue.SetAuthParam(UEid, av.Rand, 1, counter)
+		ue.SetAuthParam(UEid, av.Autn, 2, counter)
+		ue.SetAuthParam(UEid, av.XresStar, 3, counter)
+	}
+	SetCountResult := context.SetCountByUEid(UEid, 1)
+	if SetCountResult != true {
+		fmt.Println("Store Authentication status failed.")
+	}
+
 }

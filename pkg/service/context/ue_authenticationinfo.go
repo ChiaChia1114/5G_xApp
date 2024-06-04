@@ -1,5 +1,9 @@
 package context
 
+import (
+	"fmt"
+)
+
 type AmfUe struct {
 	/* Ue Identity*/
 	UEid     int
@@ -7,6 +11,10 @@ type AmfUe struct {
 	kValue   string
 	RES      []byte
 	Active   bool
+	count    int
+	RANDmap  map[int]string
+	AUTNmap  map[int]string
+	XRESmap  map[int]string
 }
 
 func NewAmfUe(UEid int, opcValue string, kValue string, resResponse []byte) *AmfUe {
@@ -16,10 +24,10 @@ func NewAmfUe(UEid int, opcValue string, kValue string, resResponse []byte) *Amf
 		kValue:   kValue,
 		RES:      resResponse,
 		Active:   false,
-		//firstRES: firstRES,
-		//RANDMap:  make(map[int][]byte), // Initialize the slice of byte slices
-		//AUTNMap:  make(map[int][]byte),
-		//RESMap:   make(map[int][]byte),
+		count:    0,
+		RANDmap:  make(map[int]string),
+		AUTNmap:  make(map[int]string),
+		XRESmap:  make(map[int]string),
 	}
 }
 
@@ -94,87 +102,79 @@ func SetRESByUEid(UEid int, res []byte) bool {
 	return true
 }
 
-////Delete FirstRES returns the booling value corresponding to the given UEid.
-//func DeleteFirstRESByUEid(UEid int) bool {
-//	ue, ok := AmfUeMap[UEid]
-//	if ok {
-//		ue.firstRES = nil
-//		StoreAmfUe(ue)
-//		CheckResult := CheckUserStatus(UEid)
-//		if CheckResult {
-//			// Delete First failed
-//			return false
-//		} else {
-//			// Delete First success
-//			return true
-//		}
-//	}
-//	return false
-//}
+// SetCountByUEid
+func SetCountByUEid(UEid int, count int) bool {
+	ue, ok := AmfUeMap[UEid]
+	if !ok {
+		return false
+	}
+	ue.count = count
+	StoreAmfUe(ue)
+	return true
+}
 
-//// AddByteSlice adds a new byte slice to the AmfUe instance.
-//func (ue *AmfUe) SetAuthParam(UEid int, res []byte, AuthType int, counter int) {
-//	if _, ok := AmfUeMap[UEid]; !ok {
-//		// Create a new AmfUe object if the UEid doesn't exist
-//		AmfUeMap[UEid] = NewAmfUe(UEid, nil)
-//	}
-//	switch AuthType {
-//	case 1:
-//		AmfUeMap[UEid].RANDMap[counter] = res
-//		//fmt.Println("Set ", counter, " Auth RAND Parameter Success.")
-//		//fmt.Println("Print ", counter, " RAND: ", res)
-//	case 2:
-//		AmfUeMap[UEid].AUTNMap[counter] = res
-//		//fmt.Println("Set ", counter, " Auth AUTN Parameter Success.")
-//		//fmt.Println("Print ", counter, " AUTN: ", res)
-//	case 3:
-//		AmfUeMap[UEid].RESMap[counter] = res
-//		//fmt.Println("Set ", counter, " Auth RES Parameter Success.")
-//		//fmt.Println("Print ", counter, " RES: ", res)
-//	default:
-//		fmt.Println("Set Auth Parameter failed.")
-//	}
-//}
+// GetCountByUEid
+func GetCountByUEid(UEid int) (int, bool) {
+	ue, ok := AmfUeMap[UEid]
+	if !ok {
+		return 0, false
+	}
+	return ue.count, true
+}
 
-//func (ue *AmfUe) GetAUTN(UEid int, AuthType int) []byte {
-//	// Check if the UEid exists in the map
-//	if _, ok := AmfUeMap[UEid]; ok {
-//		var AuthResponse []byte
-//		switch AuthType {
-//		case 1:
-//			for i := 0; i <= 8; i++ {
-//				if AmfUeMap[UEid].RANDMap[i] != nil {
-//					AuthResponse = AmfUeMap[UEid].RANDMap[i]
-//					ue.SetAuthParam(UEid, nil, 1, i)
-//					//fmt.Println("Get Auth RAND Parameter Success.")
-//					return AuthResponse
-//				}
-//			}
-//			return nil
-//		case 2:
-//			for i := 0; i <= 8; i++ {
-//				if AmfUeMap[UEid].AUTNMap[i] != nil {
-//					AuthResponse = AmfUeMap[UEid].AUTNMap[i]
-//					ue.SetAuthParam(UEid, nil, 2, i)
-//					//fmt.Println("Get Auth AUTN Parameter Success.")
-//					return AuthResponse
-//				}
-//			}
-//			return nil
-//		case 3:
-//			for i := 0; i <= 8; i++ {
-//				if AmfUeMap[UEid].RESMap[i] != nil {
-//					AuthResponse = AmfUeMap[UEid].RESMap[i]
-//					ue.SetAuthParam(UEid, nil, 3, i)
-//					//fmt.Println("Get Auth RES Parameter Success.")
-//					return AuthResponse
-//				}
-//			}
-//			return nil
-//		default:
-//			fmt.Println("Get Auth Parameter failed.")
-//		}
-//
-//	}
-//	return nil // Return nil if UEid not found
-//}
+// AddByteSlice adds a new byte slice to the AmfUe instance.
+func (ue *AmfUe) SetAuthParam(UEid int, value string, AuthType int, counter int) {
+	if _, ok := AmfUeMap[UEid]; !ok {
+		// Create a new AmfUe object if the UEid doesn't exist
+		fmt.Println("Error for set the Auth parameters.")
+	}
+	switch AuthType {
+	case 1:
+		AmfUeMap[UEid].RANDmap[counter] = value
+		//fmt.Println("Set ", counter, " Auth RAND Parameter Success.")
+		//fmt.Println("Print ", counter, " RAND: ", res)
+	case 2:
+		AmfUeMap[UEid].AUTNmap[counter] = value
+		//fmt.Println("Set ", counter, " Auth AUTN Parameter Success.")
+		//fmt.Println("Print ", counter, " AUTN: ", res)
+	case 3:
+		AmfUeMap[UEid].XRESmap[counter] = value
+		//fmt.Println("Set ", counter, " Auth RES Parameter Success.")
+		//fmt.Println("Print ", counter, " RES: ", res)
+	default:
+		fmt.Println("Set Auth Parameter failed.")
+	}
+}
+
+func (ue *AmfUe) GetRAND(UEid int, count int) string {
+	if _, ok := AmfUeMap[UEid]; ok {
+		var AuthResponse string
+		if AmfUeMap[UEid].RANDmap[count] != "" {
+			AuthResponse = AmfUeMap[UEid].RANDmap[count]
+			return AuthResponse
+		}
+	}
+	return ""
+}
+
+func (ue *AmfUe) GetAUTN(UEid int, count int) string {
+	if _, ok := AmfUeMap[UEid]; ok {
+		var AuthResponse string
+		if AmfUeMap[UEid].AUTNmap[count] != "" {
+			AuthResponse = AmfUeMap[UEid].AUTNmap[count]
+			return AuthResponse
+		}
+	}
+	return ""
+}
+
+func (ue *AmfUe) GetXRES(UEid int, count int) string {
+	if _, ok := AmfUeMap[UEid]; ok {
+		var AuthResponse string
+		if AmfUeMap[UEid].XRESmap[count] != "" {
+			AuthResponse = AmfUeMap[UEid].XRESmap[count]
+			return AuthResponse
+		}
+	}
+	return ""
+}
