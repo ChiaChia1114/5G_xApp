@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 	"xApp/pkg/service/context"
@@ -81,7 +82,6 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	// fmt.Println("XRES: ", NORAakaRES)
 	// fmt.Println("RES: ", RES)
 
-
 	// Compare lengths of slices first
 	if len(NORAakaRES) != len(RES) {
 		// Slices are not equal if their lengths are different
@@ -122,7 +122,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
 		}
 
-
 		startTime := time.Now()
 		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
 		if !ResultofSetTimer {
@@ -154,9 +153,10 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		OriginalNASMessage = append(OriginalNASMessage, firstAutn...)
 		OtherNASMessage := receivedBytes[55:487]
 
-		// Create an initial UE information
-		newUe := context.NewAmfUe(1, firstRES)
-		context.StoreAmfUe(newUe)
+		// Store frist RES
+		UEid := 1
+		newUE := context.NewAmfUe(UEid, firstRES)
+		context.StoreAmfUe(newUE)
 
 		fmt.Println("OtherNASMessage:", OtherNASMessage)
 
@@ -171,9 +171,8 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		RES := receivedBytes[5:21]
 		UEid := 1
 
-
 		// Check if it is triggger NORA-AKA or not.
-		
+
 		checkStatus := context.CheckUserStatus(UEid)
 		if checkStatus {
 			ResultOfCompare := HandleCompareRES(RES)
@@ -204,7 +203,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					// UE count plus 1
 					context.CountPlus(UEid)
 				}
-			
+
 				if AuthCount == 0 {
 					fmt.Println("Create a new UE map")
 				}
@@ -233,7 +232,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					// UE count plus 1
 					context.CountPlus(UEid)
 				}
-			
+
 				if AuthCount == 0 {
 					fmt.Println("Create a new UE map")
 				}
@@ -271,7 +270,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					// UE count plus 1
 					context.CountPlus(UEid)
 				}
-			
+
 				if AuthCount == 0 {
 					fmt.Println("Create a new UE map")
 				}
@@ -300,7 +299,7 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					// UE count plus 1
 					context.CountPlus(UEid)
 				}
-			
+
 				if AuthCount == 0 {
 					fmt.Println("Create a new UE map")
 				}
@@ -311,39 +310,64 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 
 	case byte(0x41):
 		// 0x41: Registration Request
-		// In order to trigger second Authentication which means NORA-AKA
-		// Trigger NORA-AKA
+		// Check UE status to trigger NORA-AKA or not.
 
-		var OriginalNASMessage []byte
+		OctetstringMSIN := receivedBytes[14:19]
+		OctetstringRanID := receivedBytes[30:]
+		MSIN := hex.EncodeToString(OctetstringMSIN)
+		RanID := hex.EncodeToString(OctetstringRanID)
+		fmt.Println("UE MSIN: ", MSIN)
+		fmt.Println("UE RAN_ID: ", RanID)
 
 		UEid := 1
-
-		startTime := time.Now()
-		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
-		if !ResultofSetTimer {
-			fmt.Println("Set Start time failed.")
-		}
-
-		RANDElementID := []byte{0x21}
-		AUTNElementID := []byte{0x20}
 		ue := &context.AmfUe{}
-		NORAakaRAND := ue.GetAUTN(UEid, 1)
-		NORAakaAUTN := ue.GetAUTN(UEid, 2)
+		var OriginalNASMessage []byte
 
-		if length < 10 {
-			fmt.Println("Error: Insufficient bytes in receivedBytes.")
+		if !context.GetSubscriberActive(MSIN) {
+			// Create an initial UE information
+			newSubscriber := context.NewSubscriber(MSIN)
+			context.StoreSubscriber(newSubscriber)
+
+			if !context.GetSubscriberActive(MSIN) {
+				// Still fault with create subscriber
+				CreateSubscriberfalied := []byte{0x00}
+				OriginalNASMessage = append(OriginalNASMessage, CreateSubscriberfalied...)
+
+				return OriginalNASMessage, nil
+			} else {
+				// Still Success with create subscriber
+				CreateSubscriberSuccess := []byte{0x01}
+				OriginalNASMessage = append(OriginalNASMessage, CreateSubscriberSuccess...)
+				return OriginalNASMessage, nil
+			}
+		} else {
+			// Trigger NORA-AKA
+
+			startTime := time.Now()
+			ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
+			if !ResultofSetTimer {
+				fmt.Println("Set Start time failed.")
+			}
+
+			RANDElementID := []byte{0x21}
+			AUTNElementID := []byte{0x20}
+			NORAakaRAND := ue.GetAUTN(UEid, 1)
+			NORAakaAUTN := ue.GetAUTN(UEid, 2)
+
+			if length < 10 {
+				fmt.Println("Error: Insufficient bytes in receivedBytes.")
+			}
+
+			// Start to compose the Nora authentication packet.
+			NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
+			OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
+			OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
+			OriginalNASMessage = append(OriginalNASMessage, NORAakaRAND...)
+			OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
+			OriginalNASMessage = append(OriginalNASMessage, NORAakaAUTN...)
+
+			return OriginalNASMessage, nil
 		}
-
-		// Start to compose the Nora authentication packet.
-		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
-		OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
-		OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, NORAakaRAND...)
-		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, NORAakaAUTN...)
-
-
-		return OriginalNASMessage, nil
 	default:
 
 		return nil, nil
