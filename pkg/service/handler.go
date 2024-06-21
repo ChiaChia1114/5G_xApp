@@ -9,16 +9,18 @@ import (
 	Authtimer "xApp/pkg/service/timer"
 )
 
+var SubscriberMSIN string = ""
+
 func HandleCompareRES(RES []byte) bool {
 	// Compare RES and XRES
 	// if same, true. else false
 
-	UEid := 1
-	res, ok := context.GetFirstRESByUEid(UEid)
-	if !ok {
-		fmt.Println("No firstRES found for UEid:", UEid)
+	subscriber := &context.Subscriber{}
+	res := subscriber.GetSubscriberFirstRES(SubscriberMSIN)
+	if res == nil {
+		fmt.Println("No firstRES found for UE")
 	}
-	DeleteFirstres := context.DeleteFirstRESByUEid(UEid)
+	DeleteFirstres := subscriber.SubscriberDeleteFirstRES(SubscriberMSIN)
 	if !DeleteFirstres {
 		fmt.Println("Delete First RES Failed")
 	}
@@ -64,9 +66,8 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 	// Compare RES and XRES
 	// if same, true. else false
 
-	UEid := 1
-	ue := &context.AmfUe{}
-	NORAakaRES := ue.GetAUTN(UEid, 3)
+	subscriber := &context.Subscriber{}
+	NORAakaRES := subscriber.GetAuthenticationVectors(SubscriberMSIN, 3)
 
 	// Encryption with the xApp token
 	xAppToken := context.GlobalToken
@@ -108,19 +109,31 @@ func HandleNORAAKACompareRES(RES []byte) bool {
 }
 
 func HandleMessageSelection(octet []byte) ([]byte, []byte) {
+	var OriginalNASMessage []byte
+	subscriber := &context.Subscriber{}
+
 	receivedBytes := octet
 	DetectByte := receivedBytes[2:3]
 	length := len(receivedBytes)
+	if length < 10 {
+		fmt.Println("Error: Insufficient bytes in receivedBytes.")
+	}
 
 	// 0x56 means Authentication Request
 	// 0x57 means Authentication Response
-	fmt.Println("DetectByte: ", DetectByte[0])
+	if DetectByte[0] == 86 {
+		fmt.Println("NORA-Box received Authentication Request")
+	} else if DetectByte[0] == 87 {
+		fmt.Println("NORA-Box received Authentication Response")
+	} else if DetectByte[0] == 65 {
+		fmt.Println("NORA-Box received Registration Request")
+	} else {
+		fmt.Println("NORA-Box received unknown message")
+	}
+
 	switch DetectByte[0] {
 	case byte(0x56):
 		// Handle Authentication Request
-		if length < 10 {
-			fmt.Println("Error: Insufficient bytes in receivedBytes.")
-		}
 
 		startTime := time.Now()
 		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
@@ -145,7 +158,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		RANDElementID := []byte{0x21}
 		AUTNElementID := []byte{0x20}
 
-		OriginalNASMessage := []byte{}
 		OriginalNASMessage = append(OriginalNASMessage, Header...)
 		OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
 		OriginalNASMessage = append(OriginalNASMessage, firstRand...)
@@ -154,27 +166,24 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		OtherNASMessage := receivedBytes[55:487]
 
 		// Store frist RES
-		UEid := 1
-		newUE := context.NewAmfUe(UEid, firstRES)
-		context.StoreAmfUe(newUE)
+		StoreFirstRESResult := subscriber.SetSubscriberFirstRES(SubscriberMSIN, firstRES)
+		if StoreFirstRESResult == false {
+			fmt.Println("Store First RES Failed")
+		}
 
 		fmt.Println("OtherNASMessage:", OtherNASMessage)
 
 		return OriginalNASMessage, OtherNASMessage
 	case byte(0x57):
 		// Handle Authentication Response
-		if length < 10 {
-			fmt.Println("Error: Insufficient bytes in receivedBytes.")
-		}
-		var OriginalNASMessage []byte
+
 		Header := receivedBytes[:4]
 		RES := receivedBytes[5:21]
-		UEid := 1
 
 		// Check if it is triggger NORA-AKA or not.
 
-		checkStatus := context.CheckUserStatus(UEid)
-		if checkStatus {
+		checkStatus := context.GetSubscriberCount(SubscriberMSIN)
+		if checkStatus == 0 {
 			ResultOfCompare := HandleCompareRES(RES)
 
 			RESLength := []byte{0x01}
@@ -191,17 +200,17 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
-				AuthCount := context.GetCount(UEid)
+				AuthCount := context.GetSubscriberCount(SubscriberMSIN)
 				if AuthCount == 9 {
 					// Delete the UE MAP for the creation
-					context.DeleteAmfUe(UEid)
-					CheckUE := context.CheckUEStatus(UEid)
+					context.DeleteSubscriber(SubscriberMSIN)
+					CheckUE := context.CheckSubscriberStatus(SubscriberMSIN)
 					if !CheckUE {
 						fmt.Println("Delete UE status context success.")
 					}
 				} else {
 					// UE count plus 1
-					context.CountPlus(UEid)
+					context.SubscriberCountPlus(SubscriberMSIN)
 				}
 
 				if AuthCount == 0 {
@@ -219,18 +228,18 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
-				AuthCount := context.GetCount(UEid)
+				AuthCount := context.GetSubscriberCount(SubscriberMSIN)
 				// fmt.Println("Count: ", AuthCount)
 				if AuthCount == 9 {
 					// Delete the UE MAP for the creation
-					context.DeleteAmfUe(UEid)
-					CheckUE := context.CheckUEStatus(UEid)
+					context.DeleteSubscriber(SubscriberMSIN)
+					CheckUE := context.CheckSubscriberStatus(SubscriberMSIN)
 					if !CheckUE {
 						fmt.Println("Delete UE status context success.")
 					}
 				} else {
 					// UE count plus 1
-					context.CountPlus(UEid)
+					context.SubscriberCountPlus(SubscriberMSIN)
 				}
 
 				if AuthCount == 0 {
@@ -257,18 +266,18 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
-				AuthCount := context.GetCount(UEid)
+				AuthCount := context.GetSubscriberCount(SubscriberMSIN)
 				fmt.Println("Count: ", AuthCount)
 				if AuthCount == 9 {
 					// Delete the UE MAP for the creation
-					context.DeleteAmfUe(UEid)
-					CheckUE := context.CheckUEStatus(UEid)
+					context.DeleteSubscriber(SubscriberMSIN)
+					CheckUE := context.CheckSubscriberStatus(SubscriberMSIN)
 					if !CheckUE {
 						fmt.Println("Delete UE status context success.")
 					}
 				} else {
 					// UE count plus 1
-					context.CountPlus(UEid)
+					context.SubscriberCountPlus(SubscriberMSIN)
 				}
 
 				if AuthCount == 0 {
@@ -286,18 +295,18 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 					fmt.Println(err)
 				}
 
-				AuthCount := context.GetCount(UEid)
+				AuthCount := context.GetSubscriberCount(SubscriberMSIN)
 				fmt.Println("Count: ", AuthCount)
 				if AuthCount == 9 {
 					// Delete the UE MAP for the creation
-					context.DeleteAmfUe(UEid)
-					CheckUE := context.CheckUEStatus(UEid)
+					context.DeleteSubscriber(SubscriberMSIN)
+					CheckUE := context.CheckSubscriberStatus(SubscriberMSIN)
 					if !CheckUE {
 						fmt.Println("Delete UE status context success.")
 					}
 				} else {
 					// UE count plus 1
-					context.CountPlus(UEid)
+					context.SubscriberCountPlus(SubscriberMSIN)
 				}
 
 				if AuthCount == 0 {
@@ -313,15 +322,9 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 		// Check UE status to trigger NORA-AKA or not.
 
 		OctetstringMSIN := receivedBytes[14:19]
-		OctetstringRanID := receivedBytes[30:]
 		MSIN := hex.EncodeToString(OctetstringMSIN)
-		RanID := hex.EncodeToString(OctetstringRanID)
+		SubscriberMSIN = MSIN
 		fmt.Println("UE MSIN: ", MSIN)
-		fmt.Println("UE RAN_ID: ", RanID)
-
-		UEid := 1
-		ue := &context.AmfUe{}
-		var OriginalNASMessage []byte
 
 		if !context.GetSubscriberActive(MSIN) {
 			// Create an initial UE information
@@ -342,7 +345,6 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 			}
 		} else {
 			// Trigger NORA-AKA
-
 			startTime := time.Now()
 			ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
 			if !ResultofSetTimer {
@@ -351,8 +353,8 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 
 			RANDElementID := []byte{0x21}
 			AUTNElementID := []byte{0x20}
-			NORAakaRAND := ue.GetAUTN(UEid, 1)
-			NORAakaAUTN := ue.GetAUTN(UEid, 2)
+			NORAakaRAND := subscriber.GetAuthenticationVectors(SubscriberMSIN, 1)
+			NORAakaAUTN := subscriber.GetAuthenticationVectors(SubscriberMSIN, 2)
 
 			if length < 10 {
 				fmt.Println("Error: Insufficient bytes in receivedBytes.")
@@ -377,14 +379,13 @@ func HandleMessageSelection(octet []byte) ([]byte, []byte) {
 func HandleOtherMessage(OtherMessage []byte) {
 	//Separate and store the AUTN, RAND and RES
 	Message := OtherMessage
-	ue := &context.AmfUe{}
-	UEid := 1
+	subscriber := &context.Subscriber{}
 	count := 0
 
 	for counter := 0; counter <= 9; counter++ {
-		ue.SetAuthParam(UEid, Message[count:count+16], 1, counter)
-		ue.SetAuthParam(UEid, Message[count+16:count+32], 2, counter)
-		ue.SetAuthParam(UEid, Message[count+32:count+48], 3, counter)
+		subscriber.SetAuthenticationVectors(SubscriberMSIN, Message[count:count+16], 1, counter)
+		subscriber.SetAuthenticationVectors(SubscriberMSIN, Message[count+16:count+32], 2, counter)
+		subscriber.SetAuthenticationVectors(SubscriberMSIN, Message[count+32:count+48], 3, counter)
 		count += 48
 	}
 
