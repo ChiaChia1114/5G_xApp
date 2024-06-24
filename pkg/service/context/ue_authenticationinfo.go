@@ -1,98 +1,99 @@
 package context
 
-type AmfUe struct {
-	/* Ue Identity*/
-	UEid     int
-	OpcValue string
-	kValue   string
-	RES      []byte
-	Active   bool
-}
-
-func NewAmfUe(UEid int, opcValue string, kValue string, resResponse []byte) *AmfUe {
-	return &AmfUe{
-		UEid:     UEid,
-		OpcValue: opcValue,
-		kValue:   kValue,
-		RES:      resResponse,
-		Active:   false,
-		//firstRES: firstRES,
-		//RANDMap:  make(map[int][]byte), // Initialize the slice of byte slices
-		//AUTNMap:  make(map[int][]byte),
-		//RESMap:   make(map[int][]byte),
-	}
-}
-
-// AmfUeMap maps UEid to corresponding AmfUe instances.
-var AmfUeMap map[int]*AmfUe
-
-func init() {
-	AmfUeMap = make(map[int]*AmfUe)
-}
-
-// StoreAmfUe stores the AmfUe instance in the AmfUeMap.
-func StoreAmfUe(ue *AmfUe) {
-	AmfUeMap[ue.UEid] = ue
-}
-
-// GetOpcValueByUEid returns the firstRES value corresponding to the given UEid.
-func GetOpcValueByUEid(UEid int) (string, bool) {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return "", false
-	}
-	return ue.OpcValue, true
-}
-
-// GetkValueByUEid returns the firstRES value corresponding to the given UEid.
-func GetkValueByUEid(UEid int) (string, bool) {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return "", false
-	}
-	return ue.kValue, true
-}
-
-// GetRESValueByUEid returns the firstRES value corresponding to the given UEid.
-func GetRESValueByUEid(UEid int) ([]byte, bool) {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return nil, false
-	}
-	return ue.RES, true
-}
-
-// GetStatusByUEid returns the firstRES value corresponding to the given UEid.
-func GetStatusByUEid(UEid int) bool {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return false
-	}
-	return ue.Active
-}
-
-// SetStatusByUEid returns the firstRES value corresponding to the given UEid.
-func SetStatusByUEid(UEid int) bool {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return false
-	}
-	ue.Active = true
-	StoreAmfUe(ue)
-	CheckResult := GetStatusByUEid(UEid)
-	return CheckResult
-}
-
-// SetRESByUEid returns the firstRES value corresponding to the given UEid.
-func SetRESByUEid(UEid int, res []byte) bool {
-	ue, ok := AmfUeMap[UEid]
-	if !ok {
-		return false
-	}
-	ue.RES = res
-	StoreAmfUe(ue)
-	return true
-}
+//
+//type AmfUe struct {
+//	/* Ue Identity*/
+//	UEid     int
+//	OpcValue string
+//	kValue   string
+//	RES      []byte
+//	Active   bool
+//}
+//
+//func NewAmfUe(UEid int, opcValue string, kValue string, resResponse []byte) *AmfUe {
+//	return &AmfUe{
+//		UEid:     UEid,
+//		OpcValue: opcValue,
+//		kValue:   kValue,
+//		RES:      resResponse,
+//		Active:   false,
+//		//firstRES: firstRES,
+//		//RANDMap:  make(map[int][]byte), // Initialize the slice of byte slices
+//		//AUTNMap:  make(map[int][]byte),
+//		//RESMap:   make(map[int][]byte),
+//	}
+//}
+//
+//// AmfUeMap maps UEid to corresponding AmfUe instances.
+//var AmfUeMap map[int]*AmfUe
+//
+//func init() {
+//	AmfUeMap = make(map[int]*AmfUe)
+//}
+//
+//// StoreAmfUe stores the AmfUe instance in the AmfUeMap.
+//func StoreAmfUe(ue *AmfUe) {
+//	AmfUeMap[ue.UEid] = ue
+//}
+//
+//// GetOpcValueByUEid returns the firstRES value corresponding to the given UEid.
+//func GetOpcValueByUEid(UEid int) (string, bool) {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return "", false
+//	}
+//	return ue.OpcValue, true
+//}
+//
+//// GetkValueByUEid returns the firstRES value corresponding to the given UEid.
+//func GetkValueByUEid(UEid int) (string, bool) {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return "", false
+//	}
+//	return ue.kValue, true
+//}
+//
+//// GetRESValueByUEid returns the firstRES value corresponding to the given UEid.
+//func GetRESValueByUEid(UEid int) ([]byte, bool) {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return nil, false
+//	}
+//	return ue.RES, true
+//}
+//
+//// GetStatusByUEid returns the firstRES value corresponding to the given UEid.
+//func GetStatusByUEid(UEid int) bool {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return false
+//	}
+//	return ue.Active
+//}
+//
+//// SetStatusByUEid returns the firstRES value corresponding to the given UEid.
+//func SetStatusByUEid(UEid int) bool {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return false
+//	}
+//	ue.Active = true
+//	StoreAmfUe(ue)
+//	CheckResult := GetStatusByUEid(UEid)
+//	return CheckResult
+//}
+//
+//// SetRESByUEid returns the firstRES value corresponding to the given UEid.
+//func SetRESByUEid(UEid int, res []byte) bool {
+//	ue, ok := AmfUeMap[UEid]
+//	if !ok {
+//		return false
+//	}
+//	ue.RES = res
+//	StoreAmfUe(ue)
+//	return true
+//}
 
 ////Delete FirstRES returns the booling value corresponding to the given UEid.
 //func DeleteFirstRESByUEid(UEid int) bool {

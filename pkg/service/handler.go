@@ -3,19 +3,18 @@ package service
 import (
 	"encoding/hex"
 	"fmt"
-	"time"
 	"xApp/pkg/service/context"
-	Authtimer "xApp/pkg/service/timer"
 )
+
+var SubscriberMSIN string = ""
 
 func HandleCompareRES(RES []byte) bool {
 	// Compare RES and XRES
 	// if same, true. else false
 
-	UEid := 1
-	res, ok := context.GetRESValueByUEid(UEid)
-	if !ok {
-		fmt.Println("No RES found for UEid:", UEid)
+	res := context.GetRESValueByMSIN(SubscriberMSIN)
+	if res == nil {
+		fmt.Println("No RES found for MSIN: ", SubscriberMSIN)
 	}
 
 	xAppToken := context.GlobalToken
@@ -55,10 +54,9 @@ func HandleCompareRES(RES []byte) bool {
 func HandleNORAAKACompareRES(RES []byte) bool {
 	// Compare RES and XRES
 
-	UEid := 1
-	NORAakaRES, GetRESResult := context.GetRESValueByUEid(UEid)
-	if !GetRESResult {
-		fmt.Println("Error for getting RES from NORA-AKA procedure.")
+	NORAakaRES := context.GetRESValueByMSIN(SubscriberMSIN)
+	if NORAakaRES == nil {
+		fmt.Println("Error for getting RES from NORA-AKA procedure. MSIN: ", SubscriberMSIN)
 	}
 
 	xAppToken := context.GlobalToken
@@ -102,17 +100,20 @@ func HandleMessageSelection(octet []byte) []byte {
 
 	// 0x56 means Authentication Request
 	// 0x57 means Authentication Response
-	fmt.Println("DetectByte: ", DetectByte[0])
+	if DetectByte[0] == 86 {
+		fmt.Println("NORA-Box received Authentication Request")
+	} else if DetectByte[0] == 87 {
+		fmt.Println("NORA-Box received Authentication Response")
+	} else if DetectByte[0] == 65 {
+		fmt.Println("NORA-Box received Registration Request")
+	} else {
+		fmt.Println("NORA-Box received unknown message")
+	}
+
 	switch DetectByte[0] {
 	case byte(0x56):
 		if length < 10 {
 			fmt.Println("Error: Insufficient bytes in receivedBytes.")
-		}
-
-		startTime := time.Now()
-		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
-		if !ResultofSetTimer {
-			fmt.Println("Set Start time failed.")
 		}
 
 		Header := receivedBytes[:7]
@@ -163,9 +164,11 @@ func HandleMessageSelection(octet []byte) []byte {
 		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
 		OriginalNASMessage = append(OriginalNASMessage, AutnnewBytes...)
 
-		// Create an initial UE information
-		newUe := context.NewAmfUe(1, opcStr, kStr, XREStartnexBytes)
-		context.StoreAmfUe(newUe)
+		// Store Subscriber's information
+
+		context.SetOpcValueByMSIN(SubscriberMSIN, opcStr)
+		context.SetkValueByMSIN(SubscriberMSIN, kStr)
+		context.SetRESByMSIN(SubscriberMSIN, XREStartnexBytes)
 
 		return OriginalNASMessage
 	case byte(0x57):
@@ -176,43 +179,25 @@ func HandleMessageSelection(octet []byte) []byte {
 		Header := receivedBytes[:4]
 		RES := receivedBytes[5:21]
 
-		UEid := 1
-
 		RESLength := []byte{0x01}
 		OriginalNASMessage = append(OriginalNASMessage, Header...)
 		OriginalNASMessage = append(OriginalNASMessage, RESLength...)
 
 		// Check the status of the UE
 		// Check if it is triggger NORA-AKA or not.
-		checkresult := context.GetStatusByUEid(UEid)
+		checkresult := context.GetSubscriberActiveValue(SubscriberMSIN)
 		if !checkresult {
 			ResultOfCompare := HandleCompareRES(RES)
-			context.SetStatusByUEid(UEid)
 
 			if ResultOfCompare == true {
 				CompareResultTrue := []byte{0x01}
-
-				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
-
-				// endTime := time.Now()
-				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				// fmt.Println("First Authentication transmission time: ", serviceTime)
-				// err := filer.ReadTimeFromFile(1, endTime)
-				// if err != nil {
-				// 	fmt.Println(err)
-				// }
+				context.SetSubscriberActiveValue(SubscriberMSIN)
 
 				return OriginalNASMessage
 			} else {
 				CompareResultFalse := []byte{0x00}
-
-				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
-
-				// endTime := time.Now()
-				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				// fmt.Println("First Authentication transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -222,24 +207,12 @@ func HandleMessageSelection(octet []byte) []byte {
 
 			if NORAResultOfCompare == true {
 				CompareResultTrue := []byte{0x01}
-
-				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultTrue...)
-
-				// endTime := time.Now()
-				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				// fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			} else {
 				CompareResultFalse := []byte{0x00}
-
-				// Convert string to []byte
 				OriginalNASMessage = append(OriginalNASMessage, CompareResultFalse...)
-
-				// endTime := time.Now()
-				// serviceTime := endTime.Sub(Authtimer.GetStartTime(1))
-				// fmt.Println("NORA-AKA transmission time: ", serviceTime)
 
 				return OriginalNASMessage
 			}
@@ -252,67 +225,86 @@ func HandleMessageSelection(octet []byte) []byte {
 		// Trigger NORA-AKA
 		var OriginalNASMessage []byte
 
-		startTime := time.Now()
-		ResultofSetTimer := Authtimer.SetStartTime(1, startTime)
-		if !ResultofSetTimer {
-			fmt.Println("Set Start time failed.")
+		OctetstringMSIN := receivedBytes[14:19]
+		MSIN := hex.EncodeToString(OctetstringMSIN)
+		SubscriberMSIN = MSIN
+		fmt.Println("UE MSIN: ", MSIN)
+
+		if !context.GetSubscriberActive(MSIN) {
+			// Create an initial UE information
+			newSubscriber := context.NewSubscriber(MSIN)
+			context.StoreSubscriber(newSubscriber)
+
+			if !context.GetSubscriberActive(MSIN) {
+				// Still fault with create subscriber
+				CreateSubscriberfalied := []byte{0x00}
+				OriginalNASMessage = append(OriginalNASMessage, CreateSubscriberfalied...)
+
+				return OriginalNASMessage
+			} else {
+				// Still Success with create subscriber
+				CreateSubscriberSuccess := []byte{0x01}
+				OriginalNASMessage = append(OriginalNASMessage, CreateSubscriberSuccess...)
+				return OriginalNASMessage
+			}
+		} else {
+			// Trigger NORA-AKA
+			RANDElementID := []byte{0x21}
+			AUTNElementID := []byte{0x20}
+
+			if length < 10 {
+				fmt.Println("Error: Insufficient bytes in receivedBytes.")
+			}
+
+			opcValue := context.GetOpcValueByMSIN(MSIN)
+			if opcValue == "" {
+				fmt.Println("Error for empty opcValue")
+			}
+			kValue := context.GetkValueByMSIN(MSIN)
+			if kValue == "" {
+				fmt.Println("Error for empty kValue")
+			}
+
+			av, result := XAppAKAGenerateAUTH(opcValue, kValue)
+			if !result {
+				fmt.Println("Error for generate the Authentication vector.")
+			}
+
+			RANDhexString := av.Rand
+			RANDnewBytes, err := hex.DecodeString(RANDhexString)
+			if err != nil {
+				fmt.Println("Error decoding hex string:", err)
+			}
+
+			AutnhexString := av.Autn
+			AutnnewBytes, err := hex.DecodeString(AutnhexString)
+			if err != nil {
+				fmt.Println("Error decoding hex string:", err)
+			}
+
+			XREStarthexString := av.XresStar
+			XREStartnexBytes, err := hex.DecodeString(XREStarthexString)
+			if err != nil {
+				fmt.Println("Error decoding hex string:", err)
+			}
+
+			fmt.Println("T-RAND: ", RANDnewBytes)
+			fmt.Println("T-AUTN: ", AutnnewBytes)
+			fmt.Println("T-XRES: ", XREStartnexBytes)
+
+			// Start to compose the Nora authentication packet.
+			NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
+			OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
+			OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
+			OriginalNASMessage = append(OriginalNASMessage, RANDnewBytes...)
+			OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
+			OriginalNASMessage = append(OriginalNASMessage, AutnnewBytes...)
+
+			context.SetRESByMSIN(MSIN, XREStartnexBytes)
+
+			return OriginalNASMessage
 		}
 
-		RANDElementID := []byte{0x21}
-		AUTNElementID := []byte{0x20}
-
-		if length < 10 {
-			fmt.Println("Error: Insufficient bytes in receivedBytes.")
-		}
-
-		UEid := 1
-		opcValue, GetOpcResult := context.GetOpcValueByUEid(UEid)
-		if !GetOpcResult {
-			fmt.Println("Error for empty opcValue")
-		}
-		kValue, GetkResult := context.GetkValueByUEid(UEid)
-		if !GetkResult {
-			fmt.Println("Error for empty kValue")
-		}
-
-		av, result := XAppAKAGenerateAUTH(opcValue, kValue)
-		if !result {
-			fmt.Println("Error for generate the Authentication vector.")
-		}
-
-		RANDhexString := av.Rand
-		RANDnewBytes, err := hex.DecodeString(RANDhexString)
-		if err != nil {
-			fmt.Println("Error decoding hex string:", err)
-		}
-
-		AutnhexString := av.Autn
-		AutnnewBytes, err := hex.DecodeString(AutnhexString)
-		if err != nil {
-			fmt.Println("Error decoding hex string:", err)
-		}
-
-		XREStarthexString := av.XresStar
-		XREStartnexBytes, err := hex.DecodeString(XREStarthexString)
-		if err != nil {
-			fmt.Println("Error decoding hex string:", err)
-		}
-
-		fmt.Println("T-RAND: ", RANDnewBytes)
-		fmt.Println("T-AUTN: ", AutnnewBytes)
-		fmt.Println("T-XRES: ", XREStartnexBytes)
-
-		// Start to compose the Nora authentication packet.
-		NORAheader := []byte{0x7e, 0x00, 0x56, 0x00, 0x02, 0x00, 0x00}
-		OriginalNASMessage = append(OriginalNASMessage, NORAheader...)
-		OriginalNASMessage = append(OriginalNASMessage, RANDElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, RANDnewBytes...)
-		OriginalNASMessage = append(OriginalNASMessage, AUTNElementID...)
-		OriginalNASMessage = append(OriginalNASMessage, AutnnewBytes...)
-
-		context.SetRESByUEid(UEid, XREStartnexBytes)
-
-		return OriginalNASMessage
 	default:
 
 		return nil
